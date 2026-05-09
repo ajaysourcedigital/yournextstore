@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
+import { Suspense } from "react";
+import { ProductsPagination } from "@/app/products/products-pagination";
 import { ProductCard } from "@/components/product-card";
+import { FilterSidebar, SORT_OPTIONS, type SortValue } from "@/components/sections/filter-sidebar";
 import { commerce } from "@/lib/commerce";
-import { SearchPagination } from "./search-pagination";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -19,73 +21,138 @@ export async function generateMetadata({
 	};
 }
 
-async function SearchResults({ q, page }: { q?: string; page?: string }) {
+function SearchHeader({ q, count }: { q?: string; count?: number }) {
+	return (
+		<section className="bg-[var(--color-primary-container)] border-b border-foreground">
+			<div className="max-w-[1280px] mx-auto px-5 md:px-20 py-12 md:py-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+				<div>
+					<span className="label-caps text-[var(--color-on-primary-container)]">Search</span>
+					<h1 className="font-serif text-4xl md:text-5xl lg:text-[64px] leading-[1.05] mt-3 text-[var(--color-on-primary-container)]">
+						{q ? `“${q}”` : "Search the store"}
+					</h1>
+				</div>
+				{typeof count === "number" && (
+					<div className="label-caps neo-border px-3 py-2 bg-[var(--color-surface-container-lowest)]">
+						{count} {count === 1 ? "result" : "results"}
+					</div>
+				)}
+			</div>
+		</section>
+	);
+}
+
+async function SearchResults({
+	q,
+	page,
+	sort,
+	category,
+}: {
+	q?: string;
+	page?: string;
+	sort?: string;
+	category?: string;
+}) {
 	"use cache";
 	cacheLife("minutes");
 
-	const currentPage = Math.max(1, Number(page) || 1);
-	const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
-
-	if (!q?.trim()) {
+	const trimmed = q?.trim();
+	if (!trimmed) {
 		return (
-			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-				<div className="text-center">
-					<Search className="mx-auto h-12 w-12 text-muted-foreground" />
-					<h1 className="mt-4 text-2xl font-medium text-foreground">Search our store</h1>
-					<p className="mt-2 text-muted-foreground">Enter a search term to find products.</p>
-				</div>
-			</section>
+			<div className="neo-border bg-[var(--color-surface-container-lowest)] py-20 text-center">
+				<Search className="mx-auto h-10 w-10 text-[var(--color-on-surface-variant)]" />
+				<p className="mt-4 font-serif text-2xl">Search our store</p>
+				<p className="mt-2 text-[var(--color-on-surface-variant)]">
+					Type a query above to discover products.
+				</p>
+			</div>
 		);
 	}
 
+	const currentPage = Math.max(1, Number(page) || 1);
+	const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+	const sortOption = SORT_OPTIONS.find((s) => s.value === (sort as SortValue)) ?? SORT_OPTIONS[0];
+
 	const result = await commerce.productBrowse({
-		query: q.trim(),
+		query: trimmed,
 		active: true,
 		limit: PRODUCTS_PER_PAGE,
 		offset,
+		orderBy: sortOption.orderBy,
+		orderDirection: sortOption.orderDirection,
+		...(category ? { category } : {}),
 	});
-
-	const totalPages = Math.ceil(result.meta.count / PRODUCTS_PER_PAGE);
 
 	if (result.data.length === 0) {
 		return (
-			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-				<div className="text-center">
-					<Search className="mx-auto h-12 w-12 text-muted-foreground" />
-					<h1 className="mt-4 text-2xl font-medium text-foreground">No results found</h1>
-					<p className="mt-2 text-muted-foreground">
-						No products matched &ldquo;{q}&rdquo;. Try a different search term.
-					</p>
-				</div>
-			</section>
+			<div className="neo-border bg-[var(--color-surface-container-lowest)] py-20 text-center">
+				<Search className="mx-auto h-10 w-10 text-[var(--color-on-surface-variant)]" />
+				<p className="mt-4 font-serif text-2xl">No results</p>
+				<p className="mt-2 text-[var(--color-on-surface-variant)]">
+					Nothing matched “{trimmed}”. Try a different term.
+				</p>
+			</div>
 		);
 	}
 
-	return (
-		<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-			<div className="mb-12">
-				<h1 className="text-2xl sm:text-3xl font-medium text-foreground">Results for &ldquo;{q}&rdquo;</h1>
-				<p className="mt-2 text-muted-foreground">
-					{result.meta.count} {result.meta.count === 1 ? "product" : "products"} found
-				</p>
-			</div>
+	const totalPages = Math.ceil(result.meta.count / PRODUCTS_PER_PAGE);
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+	return (
+		<>
+			<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
 				{result.data.map((product) => (
 					<ProductCard key={product.id} product={product} />
 				))}
 			</div>
-
-			<SearchPagination currentPage={currentPage} totalPages={totalPages} query={q} />
-		</section>
+			<ProductsPagination
+				currentPage={currentPage}
+				totalPages={totalPages}
+				basePath="/search"
+				extraParams={{ q: trimmed, category }}
+				sort={sort}
+			/>
+		</>
 	);
+}
+
+async function SearchCount({ q, category }: { q?: string; category?: string }) {
+	const trimmed = q?.trim();
+	if (!trimmed) return <SearchHeader q={undefined} />;
+	const r = await commerce.productBrowse({
+		query: trimmed,
+		active: true,
+		limit: 1,
+		...(category ? { category } : {}),
+	});
+	return <SearchHeader q={trimmed} count={r.meta.count} />;
 }
 
 export default async function SearchPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ q?: string; page?: string }>;
+	searchParams: Promise<{ q?: string; page?: string; sort?: string; category?: string }>;
 }) {
-	const { q, page } = await searchParams;
-	return <SearchResults q={q} page={page} />;
+	const { q, page, sort, category } = await searchParams;
+
+	return (
+		<>
+			<Suspense fallback={<SearchHeader q={q} />}>
+				<SearchCount q={q} category={category} />
+			</Suspense>
+			<section className="px-5 md:px-20 py-12 md:py-16 border-b border-foreground">
+				<div className="max-w-[1280px] mx-auto flex flex-col md:flex-row gap-8">
+					<FilterSidebar
+						basePath="/search"
+						currentSort={sort}
+						currentCategory={category}
+						keepParams={{ q }}
+					/>
+					<div className="flex-1 min-w-0">
+						<Suspense fallback={<div className="h-96" />}>
+							<SearchResults q={q} page={page} sort={sort} category={category} />
+						</Suspense>
+					</div>
+				</div>
+			</section>
+		</>
+	);
 }

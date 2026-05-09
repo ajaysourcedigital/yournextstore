@@ -7,6 +7,7 @@ import { ProductFeatures } from "@/app/product/[slug]/product-features";
 import { ProductReviews } from "@/app/product/[slug]/product-reviews";
 import { RelatedProducts } from "@/app/product/[slug]/related-products";
 import { TiptapRenderer } from "@/components/tiptap-renderer";
+import { YnsLink } from "@/components/yns-link";
 import { commerce } from "@/lib/commerce";
 import { CURRENCY, LOCALE } from "@/lib/constants";
 import { buildProductBreadcrumbJsonLd, buildProductJsonLd, JsonLdScript } from "@/lib/json-ld";
@@ -65,7 +66,7 @@ const ProductDetails = async ({ params }: { params: Promise<{ slug: string }> })
 
 	const priceDisplay =
 		product.variants.length > 1 && minPrice !== maxPrice
-			? `${formatMoney({ amount: minPrice, currency: CURRENCY, locale: LOCALE })} - ${formatMoney({ amount: maxPrice, currency: CURRENCY, locale: LOCALE })}`
+			? `${formatMoney({ amount: minPrice, currency: CURRENCY, locale: LOCALE })} – ${formatMoney({ amount: maxPrice, currency: CURRENCY, locale: LOCALE })}`
 			: formatMoney({ amount: minPrice, currency: CURRENCY, locale: LOCALE });
 
 	const allImages = [
@@ -73,52 +74,102 @@ const ProductDetails = async ({ params }: { params: Promise<{ slug: string }> })
 		...product.variants.flatMap((v) => v.images).filter((img) => !product.images.includes(img)),
 	];
 
+	const stockBadge =
+		product.variants.length === 1 && product.variants[0]
+			? Number(product.variants[0].stock ?? 0) > 0
+				? "In stock"
+				: "Sold out"
+			: null;
+
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<main>
 			<JsonLdScript data={buildProductJsonLd(product, reviews)} />
 			<JsonLdScript data={buildProductBreadcrumbJsonLd(product)} />
-			<div className="lg:grid lg:grid-cols-2 lg:gap-16">
-				{/* Left: Image Gallery (sticky on desktop) */}
-				<MediaGallery images={allImages} productName={product.name} variants={product.variants} />
 
-				{/* Right: Product Details */}
-				<div className="mt-8 lg:mt-0 space-y-8">
-					{/* Title, Price, Description */}
-					<div className="space-y-4">
-						<h1 className="text-4xl font-medium tracking-tight text-foreground lg:text-5xl text-balance">
-							{product.name}
-						</h1>
-						<p className="text-2xl font-semibold tracking-tight">{priceDisplay}</p>
-						{product.summary && <p className="text-muted-foreground leading-relaxed">{product.summary}</p>}
-						{product.content && (
-							<div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
-								<TiptapRenderer content={product.content} />
-							</div>
+			{/* Breadcrumb / share strip */}
+			<div className="bg-[var(--color-tertiary)] text-[var(--color-on-tertiary)] border-b border-foreground">
+				<div className="max-w-[1280px] mx-auto px-5 md:px-20 py-3 flex items-center justify-between gap-4">
+					<nav aria-label="Breadcrumb" className="label-caps flex items-center gap-2 truncate">
+						<YnsLink href="/" className="hover:underline">
+							Home
+						</YnsLink>
+						<span aria-hidden>/</span>
+						{product.category ? (
+							<>
+								<YnsLink href={`/products?category=${product.category.slug}`} className="hover:underline">
+									{product.category.name}
+								</YnsLink>
+								<span aria-hidden>/</span>
+							</>
+						) : (
+							<>
+								<YnsLink href="/products" className="hover:underline">
+									Products
+								</YnsLink>
+								<span aria-hidden>/</span>
+							</>
 						)}
-					</div>
-
-					{/* Variant Selector, Quantity, Add to Cart, Trust Badges */}
-					<AddToCartButton
-						variants={product.variants}
-						product={{
-							id: product.id,
-							name: product.name,
-							slug: product.slug,
-							images: product.images,
-						}}
-						volumePricingTiers={product.volumePricingTiers}
-					/>
+						<span className="truncate max-w-[40ch] opacity-80">{product.name}</span>
+					</nav>
+					{stockBadge && (
+						<span className="label-caps neo-border bg-[var(--color-surface-container-lowest)] text-foreground px-2 py-1">
+							{stockBadge}
+						</span>
+					)}
 				</div>
 			</div>
 
-			{/* Reviews Section */}
-			<ProductReviews reviews={reviews} slug={slug} />
+			{/* Hero / details */}
+			<section className="border-b border-foreground bg-background">
+				<div className="max-w-[1280px] mx-auto px-5 md:px-20 py-10 md:py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+					<MediaGallery images={allImages} productName={product.name} variants={product.variants} />
 
-			{/* Features Section (full width below) */}
+					<div className="flex flex-col gap-8 lg:pt-4">
+						<div>
+							{product.category && (
+								<span className="label-caps text-[var(--color-on-surface-variant)]">
+									{product.category.name}
+								</span>
+							)}
+							<h1 className="font-serif text-4xl md:text-5xl lg:text-[56px] leading-[1.05] mt-3 text-foreground text-balance">
+								{product.name}
+							</h1>
+							<div className="mt-5 inline-flex items-center gap-3 neo-border bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)] px-4 py-2">
+								<span className="font-serif text-2xl font-semibold tracking-tight">{priceDisplay}</span>
+							</div>
+							{product.summary && (
+								<p className="mt-6 text-base md:text-lg leading-relaxed text-[var(--color-on-surface-variant)]">
+									{product.summary}
+								</p>
+							)}
+						</div>
+
+						<AddToCartButton
+							variants={product.variants}
+							product={{
+								id: product.id,
+								name: product.name,
+								slug: product.slug,
+								images: product.images,
+							}}
+							volumePricingTiers={product.volumePricingTiers}
+						/>
+
+						{product.content && (
+							<div className="neo-border bg-[var(--color-surface-container-lowest)] p-6">
+								<h2 className="label-caps mb-4">Details</h2>
+								<div className="prose prose-sm max-w-none text-[var(--color-on-surface-variant)]">
+									<TiptapRenderer content={product.content} />
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			</section>
+
 			<ProductFeatures />
-
-			{/* Related Products */}
+			<ProductReviews reviews={reviews} slug={slug} />
 			<RelatedProducts productId={product.id} categorySlug={product.category?.slug} />
-		</div>
+		</main>
 	);
 };

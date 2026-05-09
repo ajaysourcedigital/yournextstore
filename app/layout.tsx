@@ -1,7 +1,7 @@
 import "@/app/globals.css";
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bodoni_Moda, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { CartProvider } from "@/app/cart/cart-context";
 import { CartSidebar } from "@/app/cart/cart-sidebar";
@@ -16,14 +16,16 @@ import { commerce, getStoreFaviconUrl, meGetCached } from "@/lib/commerce";
 import { getCartCookieJson } from "@/lib/cookies";
 import { StoreJsonLd } from "@/lib/json-ld";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const workSans = Work_Sans({
+	variable: "--font-work-sans",
 	subsets: ["latin"],
+	display: "swap",
 });
 
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+const bodoniModa = Bodoni_Moda({
+	variable: "--font-bodoni-moda",
 	subsets: ["latin"],
+	display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,29 +63,80 @@ async function getInitialCart() {
 	}
 }
 
+function AnnouncementBar() {
+	return (
+		<div className="bg-[var(--color-secondary-container)] text-[var(--color-on-secondary-container)] label-caps border-b border-foreground">
+			<div className="max-w-[1280px] mx-auto px-5 md:px-20 py-2 flex justify-between items-center gap-4">
+				<div className="flex items-center gap-2">
+					<span className="hidden sm:inline">Customer service</span>
+					<span className="sm:hidden">Help</span>
+				</div>
+				<div className="text-center hidden md:block">Free US shipping on orders over $40</div>
+				<div className="flex items-center gap-2">
+					<span>$ USD</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 async function CartProviderWrapper({ children }: { children: React.ReactNode }) {
 	const { cart, cartId } = await getInitialCart();
+	const me = await meGetCached();
+	const storeName = (me.store.settings?.storeName || "Your Next Store").toLowerCase();
 
 	return (
 		<CartProvider initialCart={cart} initialCartId={cartId}>
 			<div className="flex min-h-screen flex-col">
-				<header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-					<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-						<div className="flex items-center justify-between h-16">
-							<div className="flex items-center gap-8">
-								<YnsLink prefetch={"eager"} href="/" className="text-xl font-bold">
-									Your Next Store
-								</YnsLink>
+				<header className="sticky top-0 z-50 bg-[var(--color-surface-container-lowest)] border-b border-foreground">
+					<AnnouncementBar />
+					{/* Desktop nav */}
+					<nav className="hidden md:flex max-w-[1280px] mx-auto px-20 py-4 items-center justify-between gap-8">
+						<div className="flex items-center gap-8">
+							<Suspense
+								fallback={
+									<div className="flex items-center gap-8">
+										<YnsLink
+											prefetch={"eager"}
+											href="/"
+											className="font-sans text-sm uppercase tracking-widest font-semibold border-b border-foreground pb-1"
+										>
+											Shop
+										</YnsLink>
+									</div>
+								}
+							>
 								<Navbar />
-							</div>
-							<div className="flex items-center gap-2">
-								<Suspense>
-									<SearchInput />
-								</Suspense>
-								<CartButton />
-							</div>
+							</Suspense>
 						</div>
-					</div>
+						<YnsLink
+							prefetch={"eager"}
+							href="/"
+							className="font-serif text-3xl lg:text-[40px] uppercase tracking-tight leading-none font-semibold"
+						>
+							{storeName}
+						</YnsLink>
+						<div className="flex items-center gap-6">
+							<Suspense>
+								<SearchInput />
+							</Suspense>
+							<CartButton />
+						</div>
+					</nav>
+					{/* Mobile nav */}
+					<nav className="flex md:hidden max-w-[1280px] mx-auto px-5 py-4 items-center justify-between">
+						<Suspense>
+							<SearchInput />
+						</Suspense>
+						<YnsLink
+							prefetch={"eager"}
+							href="/"
+							className="font-serif text-2xl uppercase tracking-tight leading-none font-semibold"
+						>
+							{storeName}
+						</YnsLink>
+						<CartButton />
+					</nav>
 				</header>
 				<div className="flex-1">{children}</div>
 				<Footer />
@@ -103,7 +156,7 @@ export default function RootLayout({
 
 	return (
 		<html lang="en">
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${workSans.variable} ${bodoniModa.variable} antialiased`}>
 				<Suspense>
 					<StoreJsonLd />
 				</Suspense>

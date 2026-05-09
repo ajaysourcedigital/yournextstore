@@ -1,7 +1,7 @@
 "use client";
 
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import { ShoppingBag } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTransition } from "react";
 import { addToCart } from "@/app/cart/actions";
 import { useCart } from "@/app/cart/cart-context";
@@ -55,10 +55,10 @@ export function QuickAddButton({ variantId, variantPrice, variantImages, product
 						type="button"
 						onClick={handleClick}
 						disabled={isPending}
-						className="absolute bottom-3 left-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-background/80 backdrop-blur-sm transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-background hover:scale-110 active:scale-95 disabled:opacity-50"
+						className="absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center neo-border bg-[var(--color-surface-container-lowest)] transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-[var(--color-secondary-container)] hover:text-[var(--color-on-secondary-container)] active:translate-y-px disabled:opacity-50"
 						aria-label={`Add ${product.name} to cart`}
 					>
-						<ShoppingBag className={`h-3.5 w-3.5 ${isPending ? "animate-pulse" : ""}`} />
+						<Plus className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
 					</button>
 				</TooltipTrigger>
 				<TooltipContent side="top" className="text-xs">
