@@ -1,7 +1,7 @@
 import "@/app/globals.css";
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import { CartProvider } from "@/app/cart/cart-context";
 import { CartSidebar } from "@/app/cart/cart-sidebar";
@@ -16,14 +16,10 @@ import { commerce, getStoreFaviconUrl, meGetCached } from "@/lib/commerce";
 import { getCartCookieJson } from "@/lib/cookies";
 import { StoreJsonLd } from "@/lib/json-ld";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const inter = Inter({
+	variable: "--font-inter",
 	subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
+	display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 	return {
 		title: storeName,
-		description: me.store.settings?.storeDescription || "Your next e-commerce store",
+		description: me.store.settings?.storeDescription || "Clean, renewable energy for the next generation.",
 		icons: {
 			icon: [
 				{ url: faviconUrl, sizes: "any", type: "image/svg+xml" },
@@ -61,22 +57,72 @@ async function getInitialCart() {
 	}
 }
 
+function AnnouncementBar() {
+	return (
+		<div className="bg-[var(--forest-deep)] text-[var(--lime-soft)] text-xs sm:text-[13px]">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-4">
+				<p className="hidden sm:flex items-center gap-2">
+					<span aria-hidden className="inline-block size-1.5 rounded-full bg-[var(--lime)] animate-pulse" />
+					Free shipping on residential systems over $2,500
+				</p>
+				<p className="sm:hidden flex items-center gap-2">
+					<span aria-hidden className="inline-block size-1.5 rounded-full bg-[var(--lime)]" />
+					Free shipping over $2,500
+				</p>
+				<div className="flex items-center gap-4 text-[var(--lime-soft)]/80">
+					<span className="hidden md:inline">Federal tax credit available</span>
+					<span aria-hidden className="hidden md:inline opacity-30">
+						|
+					</span>
+					<a href="tel:+18005551234" className="hover:text-white transition-colors">
+						1-800-555-SOLAR
+					</a>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function Logo() {
+	return (
+		<YnsLink prefetch={"eager"} href="/" className="flex items-center gap-2 group">
+			<span className="relative flex size-8 items-center justify-center rounded-full bg-[var(--lime)] text-[var(--forest-deep)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					className="size-4"
+					aria-hidden
+					stroke="currentColor"
+					strokeWidth="2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				>
+					<circle cx="12" cy="12" r="4" fill="currentColor" />
+					<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+				</svg>
+			</span>
+			<span className="text-[15px] font-semibold tracking-[0.18em] text-white uppercase">
+				Your Next Store
+			</span>
+		</YnsLink>
+	);
+}
+
 async function CartProviderWrapper({ children }: { children: React.ReactNode }) {
 	const { cart, cartId } = await getInitialCart();
 
 	return (
 		<CartProvider initialCart={cart} initialCartId={cartId}>
-			<div className="flex min-h-screen flex-col">
-				<header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+			<div className="flex min-h-screen flex-col bg-background">
+				<AnnouncementBar />
+				<header className="sticky top-0 z-50 bg-[var(--forest)] text-white shadow-sm">
 					<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-						<div className="flex items-center justify-between h-16">
-							<div className="flex items-center gap-8">
-								<YnsLink prefetch={"eager"} href="/" className="text-xl font-bold">
-									Your Next Store
-								</YnsLink>
+						<div className="flex items-center justify-between h-16 sm:h-[72px]">
+							<div className="flex items-center gap-10">
+								<Logo />
 								<Navbar />
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1.5">
 								<Suspense>
 									<SearchInput />
 								</Suspense>
@@ -103,7 +149,7 @@ export default function RootLayout({
 
 	return (
 		<html lang="en">
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${inter.variable} font-sans antialiased`}>
 				<Suspense>
 					<StoreJsonLd />
 				</Suspense>
