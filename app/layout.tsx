@@ -1,7 +1,8 @@
 import "@/app/globals.css";
 
+import { LeafIcon, UserIcon } from "lucide-react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import { Suspense } from "react";
 import { CartProvider } from "@/app/cart/cart-context";
 import { CartSidebar } from "@/app/cart/cart-sidebar";
@@ -16,14 +17,18 @@ import { commerce, getStoreFaviconUrl, meGetCached } from "@/lib/commerce";
 import { getCartCookieJson } from "@/lib/cookies";
 import { StoreJsonLd } from "@/lib/json-ld";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const inter = Inter({
+	variable: "--font-inter",
 	subsets: ["latin"],
+	display: "swap",
 });
 
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+const instrumentSerif = Instrument_Serif({
+	variable: "--font-instrument",
 	subsets: ["latin"],
+	weight: ["400"],
+	style: ["normal", "italic"],
+	display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,7 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 	return {
 		title: storeName,
-		description: me.store.settings?.storeDescription || "Your next e-commerce store",
+		description:
+			me.store.settings?.storeDescription || "Pure, plant-powered essentials for everyday wellbeing.",
 		icons: {
 			icon: [
 				{ url: faviconUrl, sizes: "any", type: "image/svg+xml" },
@@ -61,26 +67,62 @@ async function getInitialCart() {
 	}
 }
 
+function AnnouncementBar() {
+	return (
+		<div className="bg-[#0f2412] text-leaf-50 text-xs">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-4">
+				<p className="hidden sm:flex items-center gap-2 text-leaf-50/80">
+					<LeafIcon className="h-3.5 w-3.5 text-leaf-300" />
+					<span>Free carbon-neutral shipping on orders over $60</span>
+				</p>
+				<p className="flex items-center gap-2 mx-auto sm:mx-0">
+					<span className="text-leaf-300">Spring 2026</span>
+					<span className="text-leaf-50/40">·</span>
+					<span>The Botanica Edition is here</span>
+				</p>
+				<div className="hidden sm:flex items-center gap-4 text-leaf-50/70">
+					<span>USD</span>
+					<span className="text-leaf-50/40">|</span>
+					<span>EN</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 async function CartProviderWrapper({ children }: { children: React.ReactNode }) {
 	const { cart, cartId } = await getInitialCart();
 
 	return (
 		<CartProvider initialCart={cart} initialCartId={cartId}>
 			<div className="flex min-h-screen flex-col">
-				<header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+				<AnnouncementBar />
+				<header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
 					<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 						<div className="flex items-center justify-between h-16">
-							<div className="flex items-center gap-8">
-								<YnsLink prefetch={"eager"} href="/" className="text-xl font-bold">
-									Your Next Store
+							<div className="flex items-center gap-10">
+								<YnsLink prefetch={"eager"} href="/" className="flex items-center gap-2 group">
+									<span className="relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+										<LeafIcon className="h-4 w-4" />
+									</span>
+									<span className="font-display text-2xl tracking-tight text-foreground">
+										Your Next Store
+									</span>
 								</YnsLink>
 								<Navbar />
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1.5">
 								<Suspense>
 									<SearchInput />
 								</Suspense>
 								<CartButton />
+								<button
+									type="button"
+									aria-label="Account"
+									className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-secondary transition-colors"
+								>
+									<UserIcon className="h-4 w-4" />
+								</button>
 							</div>
 						</div>
 					</div>
@@ -103,7 +145,7 @@ export default function RootLayout({
 
 	return (
 		<html lang="en">
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${inter.variable} ${instrumentSerif.variable} font-sans antialiased`}>
 				<Suspense>
 					<StoreJsonLd />
 				</Suspense>
